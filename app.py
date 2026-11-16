@@ -7,6 +7,8 @@ from flask import Flask, redirect, render_template, request, session, url_for
 from analysis import fatigue_indicators, main_sport, weekly_summary
 from banister import banister_state
 from planner import build_plan
+from planning import (event_config, format_pace, long_run_cap, phase_for,
+                      phase_timeline, target_volume, weeks_until)
 from strava_client import StravaClient
 
 load_dotenv()
@@ -92,14 +94,33 @@ def dashboard():
 
     complete = [w["hours"] for w in weeks[:-1] if w["sessions"] > 0]
     recent_hours = sum(complete[-4:]) / len(complete[-4:]) if complete else 0
-    plan, note = build_plan(sport, recent_hours, banister["tsb"])
+
+    event = event_config()
+    phase = weeks_left = target_hours = pace = timeline = None
+    long_cap = None
+    if event:
+        weeks_left = weeks_until(event["date"])
+        phase = phase_for(weeks_left)
+        target_hours = round(target_volume(recent_hours, weeks_left), 1)
+        pace = format_pace(event["pace_seconds"])
+        long_cap = long_run_cap(weeks_left)
+        timeline = phase_timeline(recent_hours, event["date"])
+        plan, note = build_plan(sport, target_hours, banister["tsb"],
+                                phase=phase, weeks_left=weeks_left,
+                                pace_seconds=event["pace_seconds"],
+                                long_cap=long_cap)
+    else:
+        plan, note = build_plan(sport, recent_hours, banister["tsb"])
     tsb_points = _tsb_svg_points(banister["series"])
 
     athlete = client.athlete()
     return render_template("dashboard.html",
                            athlete=athlete, weeks=weeks, fatigue=fatigue,
                            banister=banister, tsb_points=tsb_points,
-                           sport=sport, plan=plan, note=note)
+                           sport=sport, plan=plan, note=note,
+                           event=event, phase=phase, weeks_left=weeks_left,
+                           target_hours=target_hours, pace=pace,
+                           timeline=timeline)
 
 
 if __name__ == "__main__":

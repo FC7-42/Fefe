@@ -58,6 +58,32 @@ Ouvre [http://localhost:5000](http://localhost:5000), clique
   dosées selon ton volume habituel et ton TSB.
 - **Charge par semaine** : volume et répartition par sport sur 6 semaines.
 
+## Objectif : programmation vers un événement
+
+Le `.env` peut déclarer un événement cible — toute la programmation s'organise
+alors autour de lui (compte à rebours, phases, volume progressif, affûtage) :
+
+```
+EVENT_NAME=Marathon des Blessés des Armées
+EVENT_DATE=2027-05-23
+EVENT_DISTANCE=marathon      # marathon | semi | 10km | 4km
+EVENT_GOAL_TIME=3:00:00      # optionnel (H:MM:SS) -> allure cible affichée
+```
+
+Phases automatiques selon les semaines restantes : préparation générale
+(> 22) → fondamental (15-22) → développement (9-14) → spécifique (4-8) →
+affûtage (1-3) → semaine de course. Volume : montée progressive vers un
+pic (×1,35 max, plafonné à 10 h), décharge toutes les 4 semaines, puis
+réduction −35/−50/−70 % pendant l'affûtage.
+
+## Personnalisation du modèle de Banister
+
+```
+ATL_DAYS=7     # constante de temps de la fatigue (défaut 7)
+CTL_DAYS=42    # constante de temps de la fitness (défaut 42)
+HRMAX=190      # ta FC max ; sinon estimée automatiquement sur tes activités
+```
+
 ## Structure
 
 ```

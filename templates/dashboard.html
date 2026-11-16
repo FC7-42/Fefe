@@ -4,6 +4,30 @@
 <p class="muted">Connecté en tant que {{ athlete.firstname }} {{ athlete.lastname }}
 · <a href="{{ url_for('logout') }}">Déconnexion</a></p>
 
+{% if event %}
+<div class="card event">
+  <h2>🎯 {{ event.name }} — {{ event.date.strftime('%d/%m/%Y') }}</h2>
+  <p><strong>J-{{ weeks_left * 7 }}</strong> · Phase actuelle : <span class="badge">{{ phase }}</span>
+  {% if pace %}· Allure cible : <strong>{{ pace }}</strong>{% endif %}
+  · Volume cible cette semaine : <strong>{{ target_hours }} h</strong></p>
+  {% if event.goal_seconds %}
+  <p class="muted">Objectif {{ (event.goal_seconds // 3600) }}h{{ '%02d' % ((event.goal_seconds % 3600) // 60) }}
+     — points de contrôle pour y croire : 10 km ≤ 40 min · semi ≤ 1h25.
+     Si tu passes ces tests, le sub-3h est jouable.</p>
+  {% endif %}
+  <h3>Roadmap des phases</h3>
+  <table>
+    <tr><th>Semaine du</th><th>Phase</th><th>Volume cible</th></tr>
+    {% for w in timeline %}
+    <tr {% if loop.first %}style="background:#fff3ec"{% endif %}>
+      <td>{{ w.week_start.strftime('%d/%m/%Y') }}</td>
+      <td>{% if loop.first %}➡ {% endif %}{{ w.phase }}</td>
+      <td>{{ w.target_hours }} h</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
 <div class="card">
   <h2>Modèle de Banister</h2>
   <div class="plan-grid">

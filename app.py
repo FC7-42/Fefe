@@ -90,9 +90,8 @@ def dashboard():
     banister = banister_state(activities)
     sport = main_sport(activities)
 
-    recent_hours = weeks[-1]["hours"] if weeks else 0
-    if len(weeks) >= 2 and weeks[-1]["sessions"] == 0:
-        recent_hours = weeks[-2]["hours"]
+    complete = [w["hours"] for w in weeks[:-1] if w["sessions"] > 0]
+    recent_hours = sum(complete[-4:]) / len(complete[-4:]) if complete else 0
     plan, note = build_plan(sport, recent_hours, banister["tsb"])
     tsb_points = _tsb_svg_points(banister["series"])
 

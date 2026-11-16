@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>🏃 Strava Planificateur</h1>
+<div class="card">
+  {% if not configured %}
+    <p><strong>Configuration manquante.</strong> Copie <code>.env.example</code> en <code>.env</code>
+    et remplis <code>STRAVA_CLIENT_ID</code> / <code>STRAVA_CLIENT_SECRET</code> depuis
+    <a href="https://www.strava.com/settings/api">tes réglages API Strava</a>.</p>
+  {% elif connected %}
+    <p>Connecté à Strava ✅</p>
+    <a class="btn" href="{{ url_for('dashboard') }}">Voir mon tableau de bord</a>
+    <a class="btn secondary" href="{{ url_for('logout') }}">Déconnexion</a>
+  {% else %}
+    <p>Connecte ton compte Strava pour analyser tes activités et générer ton plan de la semaine.</p>
+    <a class="btn" href="{{ url_for('login') }}">Se connecter avec Strava</a>
+  {% endif %}
+</div>
+{% endblock %}

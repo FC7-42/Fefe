@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>🏃 Tableau de bord</h1>
+<p class="muted">Connecté en tant que {{ athlete.firstname }} {{ athlete.lastname }}
+· <a href="{{ url_for('logout') }}">Déconnexion</a></p>
+
+<div class="card">
+  <h2>Modèle de Banister</h2>
+  <div class="plan-grid">
+    <div>
+      <span class="badge">Fatigue (ATL · 7 j)</span>
+      <h2>{{ banister.atl }}</h2>
+      <p class="muted">Charge aiguë récente</p>
+    </div>
+    <div>
+      <span class="badge">Fitness (CTL · 42 j)</span>
+      <h2>{{ banister.ctl }}</h2>
+      <p class="muted">Charge chronique</p>
+    </div>
+    <div>
+      <span class="badge">Adaptation (TSB = CTL − ATL)</span>
+      <h2>{{ banister.tsb }} <small class="muted">(veille : {{ banister.tsb_yesterday }})</small></h2>
+      <p>{{ banister.status }}</p>
+    </div>
+  </div>
+  <h3>Forme (TSB) — 90 derniers jours</h3>
+  <svg viewBox="0 0 720 160" width="100%" height="160" role="img" aria-label="Courbe TSB">
+    <line x1="0" y1="80" x2="720" y2="80" stroke="#ccc" stroke-dasharray="4"/>
+    <polyline fill="none" stroke="#fc4c02" stroke-width="2"
+      points="{{ tsb_points }}"/>
+  </svg>
+</div>
+
+<div class="card">
+  <h2>Plan de la semaine</h2>
+  <p>{{ note }}</p>
+  <table>
+    <tr><th>Jour</th><th>Séance</th><th>Durée</th><th>Contenu</th></tr>
+    {% for s in plan %}
+    <tr><td><strong>{{ s.day }}</strong></td><td>{{ s.type }}</td>
+        <td>{{ s.duration }}</td><td>{{ s.description }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Charge par semaine (6 dernières semaines)</h2>
+  <table>
+    <tr><th>Semaine du</th><th>Séances</th><th>Heures</th><th>km</th><th>Détail</th></tr>
+    {% for w in weeks %}
+    <tr><td>{{ w.week_start }}</td><td>{{ w.sessions }}</td><td>{{ w.hours }} h</td><td>{{ w.km }} km</td>
+        <td class="muted">{% for sport, v in w.by_sport.items() %}{{ sport }} : {{ v.hours }} h · {% endfor %}</td></tr>
+    {% endfor %}
+  </table>
+  <p class="muted">Ratio aigu/chronique (indicatif) : {{ fatigue.ratio }} — {{ fatigue.status }}</p>
+</div>
+{% endblock %}

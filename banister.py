@@ -30,16 +30,20 @@ def sport_key(activity):
 
 
 def activity_load(activity):
-    """Charge d'une séance : TRIMP banister si FC dispo, sinon estimation."""
+    """Charge d'une séance : TRIMP de Banister si FC dispo, sinon estimation.
+
+    TRIMP = durée(min) × HRrel × 0.64 × e^(1.92 × HRrel), avec
+    HRrel ≈ FC moyenne / FC max (approximation faute de FC de repos).
+    Ordre de grandeur attendu : ~100-150 par heure de séance soutenue.
+    """
     minutes = activity.get("elapsed_time", 0) / 60
     if minutes <= 0:
         return 0.0
     avg_hr = activity.get("average_heartrate")
     max_hr = activity.get("max_heartrate")
     if avg_hr and max_hr and max_hr > avg_hr > 0:
-        ratio = avg_hr / max_hr
-        y = ratio / (1 - ratio)  # facteur de Banister (HRrel)
-        return minutes * y * 0.64 * math.e ** (1.92 * ratio)
+        ratio = min(avg_hr / max_hr, 0.95)
+        return minutes * ratio * 0.64 * math.exp(1.92 * ratio)
     per_min = DEFAULT_LOAD_PER_MIN.get(sport_key(activity), FALLBACK_LOAD_PER_MIN)
     return minutes * per_min
 

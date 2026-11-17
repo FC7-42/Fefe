@@ -102,6 +102,8 @@ def dashboard():
     if event:
         weeks_left = weeks_until(event["date"])
         phase = phase_for(weeks_left)
+        floor = 6.0 if event["distance"] == "marathon" else (4.0 if event["distance"] == "semi" else 0)
+        volume_gap = round(floor - recent_hours, 1) if floor and recent_hours < floor else 0
         target_hours = round(target_volume(recent_hours, weeks_left, event["distance"]), 1)
         pace = format_pace(event["pace_seconds"])
         long_cap = long_run_cap(weeks_left)
@@ -132,6 +134,7 @@ def dashboard():
                            sport=sport, plan=plan, note=note,
                            event=event, phase=phase, weeks_left=weeks_left,
                            target_hours=target_hours, pace=pace,
+                           actual_hours=round(recent_hours, 1), volume_gap=volume_gap,
                            timeline=timeline)
 
 

@@ -8,8 +8,14 @@
 <div class="card event">
   <h2>🎯 {{ event.name }} — {{ event.date.strftime('%d/%m/%Y') }}</h2>
   <p><strong>J-{{ weeks_left * 7 }}</strong> · Phase actuelle : <span class="badge">{{ phase }}</span>
-  {% if pace %}· Allure cible : <strong>{{ pace }}</strong>{% endif %}
-  · Volume cible cette semaine : <strong>{{ target_hours }} h</strong></p>
+  {% if pace %}· Allure cible : <strong>{{ pace }}</strong>{% endif %}<br>
+  Ton volume réel (4 dernières semaines complètes) : <strong>{{ actual_hours }} h/sem</strong>
+  → cible cette semaine : <strong>{{ target_hours }} h</strong></p>
+  {% if volume_gap %}
+  <p class="muted">⚠️ Ton volume réel est de {{ volume_gap }} h en dessous du plancher
+  marathon (6 h/sem). La progression est volontairement accélérée : si ton TSB plonge,
+  les semaines allégées automatiques prendront le relais — et c'est normal.</p>
+  {% endif %}
   {% if event.goal_seconds %}
   <p class="muted">Objectif {{ (event.goal_seconds // 3600) }}h{{ '%02d' % ((event.goal_seconds % 3600) // 60) }}
      — points de contrôle pour y croire : 10 km ≤ 40 min · semi ≤ 1h25.

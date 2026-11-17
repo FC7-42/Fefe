@@ -102,10 +102,10 @@ def dashboard():
     if event:
         weeks_left = weeks_until(event["date"])
         phase = phase_for(weeks_left)
-        target_hours = round(target_volume(recent_hours, weeks_left), 1)
+        target_hours = round(target_volume(recent_hours, weeks_left, event["distance"]), 1)
         pace = format_pace(event["pace_seconds"])
         long_cap = long_run_cap(weeks_left)
-        timeline = phase_timeline(recent_hours, event["date"])
+        timeline = phase_timeline(recent_hours, event["date"], distance=event["distance"])
         plan, note = build_plan(sport, target_hours, banister["tsb"],
                                 phase=phase, weeks_left=weeks_left,
                                 pace_seconds=event["pace_seconds"],

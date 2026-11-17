@@ -94,19 +94,30 @@ def format_duration(seconds):
     return f"{h}h{m:02d}" if h else f"{m}min{s:02d}"
 
 
-def target_volume(weekly_hours, weeks_left):
+def target_volume(weekly_hours, weeks_left, distance=None):
     """Volume cible de la semaine (heures) : montée progressive de base vers
-    le pic à l'entrée en affûtage, décharge toutes les 4 semaines."""
+    le pic à l'entrée en affûtage, décharge toutes les 4 semaines.
+
+    Le volume est calibré sur l'objectif, pas seulement sur l'historique :
+    un marathon se prépare avec 8-12 h/semaine au pic, quel que soit le
+    point de départ (plancher ajusté à la hausse si nécessaire).
+    """
     base = weekly_hours if weekly_hours > 0 else 4.0
-    peak = min(max(base * 1.35, 6.0), 10.0)
+    if distance == "marathon":
+        base = max(base, 6.0)
+        peak = min(max(base * 1.4, 8.0), 12.0)
+    elif distance == "semi":
+        base = max(base, 4.0)
+        peak = min(max(base * 1.4, 5.5), 8.0)
+    else:
+        peak = min(max(base * 1.35, 6.0), 10.0)
 
     if weeks_left <= 0:
         return peak * 0.25
     if weeks_left <= 3:
         return {3: peak * 0.65, 2: peak * 0.50, 1: peak * 0.30}[weeks_left]
 
-    build_weeks = weeks_left - 3
-    progress = 1 - (weeks_left - 4) / build_weeks
+    progress = max(0.0, min(1.0, 1 - (weeks_left - 4) / 20))
     volume = base + (peak - base) * progress
     if weeks_left % 4 == 0:
         volume = max(volume * 0.7, base)
@@ -124,7 +135,7 @@ def long_run_cap(weeks_left):
     return 105
 
 
-def phase_timeline(weekly_hours, event_date, today=None):
+def phase_timeline(weekly_hours, event_date, today=None, distance=None):
     """Semaines de la semaine courante (première) à la semaine de course.
     Chaque entrée : lundi, phase, volume cible."""
     today = today or date.today()
@@ -136,6 +147,6 @@ def phase_timeline(weekly_hours, event_date, today=None):
         out.append({
             "week_start": monday + timedelta(weeks=offset),
             "phase": phase_for(wl),
-            "target_hours": round(target_volume(weekly_hours, wl), 1),
+            "target_hours": round(target_volume(weekly_hours, wl, distance), 1),
         })
     return out

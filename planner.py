@@ -57,6 +57,9 @@ def build_plan(main_sport, weekly_hours, tsb, phase="préparation générale",
     pace = format_pace(pace_seconds) if isinstance(pace_seconds, (int, float)) else pace_seconds
     plan = []
 
+    # Durées minimales dignes d'une préparation sérieuse
+    min_jog, min_q1, min_q2 = 45, 60, 45
+
     if phase == "semaine J":
         plan.append({
             "day": "Lundi",
@@ -104,9 +107,9 @@ def build_plan(main_sport, weekly_hours, tsb, phase="préparation générale",
         return _sorted(plan), "Semaine de course : tout est déjà dans les jambes."
 
     long_min = min(total_min * 0.38, float(long_cap or 105))
-    q1_min = total_min * 0.22
-    q2_min = total_min * 0.18 if with_quality else 0
-    jog_min = max((total_min - long_min - q1_min - q2_min) / 2, 20)
+    q1_min = max(total_min * 0.22, min_q1)
+    q2_min = max(total_min * 0.18, min_q2) if with_quality else 0
+    jog_min = max((total_min - long_min - q1_min - q2_min) / 2, min_jog)
 
     near_race = weeks_left is not None and weeks_left <= 3
     muscles_min = "30 min" if near_race else "45 min"

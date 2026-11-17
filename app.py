@@ -30,15 +30,16 @@ def get_client():
     return client
 
 
-def _tsb_svg_points(series, width=720, height=160, clamp=60):
-    """Convertit la série TSB en points SVG (y = 80 - tsb, borné à ±clamp)."""
+def _svg_points(series, key, lo, hi, width=720, height=160):
+    """Convertit une série (ATL/CTL/TSB) en points SVG sur une échelle commune."""
     n = len(series)
     if n < 2:
         return ""
     step = width / (n - 1)
+    span = (hi - lo) or 1
     pts = []
     for i, point in enumerate(series):
-        y = 80 - max(min(point["tsb"], clamp), -clamp) * (80 / clamp)
+        y = height - (point[key] - lo) / span * height
         pts.append(f"{i * step:.1f},{y:.1f}")
     return " ".join(pts)
 
@@ -111,12 +112,23 @@ def dashboard():
                                 long_cap=long_cap)
     else:
         plan, note = build_plan(sport, recent_hours, banister["tsb"])
-    tsb_points = _tsb_svg_points(banister["series"])
+
+    series = banister["series"]
+    lo = min(min(s["atl"], s["ctl"], s["tsb"]) for s in series)
+    hi = max(max(s["atl"], s["ctl"], s["tsb"]) for s in series)
+    pad = (hi - lo) * 0.05 or 1
+    lo, hi = lo - pad, hi + pad
+    atl_points = _svg_points(series, "atl", lo, hi)
+    ctl_points = _svg_points(series, "ctl", lo, hi)
+    tsb_points = _svg_points(series, "tsb", lo, hi)
+    zero_y = round(160 - (0 - lo) / (hi - lo) * 160) if lo < 0 < hi else None
 
     athlete = client.athlete()
     return render_template("dashboard.html",
                            athlete=athlete, weeks=weeks, fatigue=fatigue,
-                           banister=banister, tsb_points=tsb_points,
+                           banister=banister, atl_points=atl_points,
+                           ctl_points=ctl_points, tsb_points=tsb_points,
+                           zero_y=zero_y,
                            sport=sport, plan=plan, note=note,
                            event=event, phase=phase, weeks_left=weeks_left,
                            target_hours=target_hours, pace=pace,

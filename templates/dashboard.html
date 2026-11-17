@@ -47,11 +47,17 @@
       <p>{{ banister.status }}</p>
     </div>
   </div>
-  <h3>Forme (TSB) — 90 derniers jours</h3>
-  <svg viewBox="0 0 720 160" width="100%" height="160" role="img" aria-label="Courbe TSB">
-    <line x1="0" y1="80" x2="720" y2="80" stroke="#ccc" stroke-dasharray="4"/>
-    <polyline fill="none" stroke="#fc4c02" stroke-width="2"
-      points="{{ tsb_points }}"/>
+  <h3>Fatigue, fitness et forme — 90 derniers jours</h3>
+  <p class="legend">
+    <span style="color:#d32f2f">■</span> Fatigue (ATL)
+    <span style="color:#2e7d32">■</span> Fitness (CTL)
+    <span style="color:#1976d2">■</span> Forme (TSB)
+  </p>
+  <svg viewBox="0 0 720 160" width="100%" height="160" role="img" aria-label="Courbes ATL, CTL et TSB">
+    {% if zero_y %}<line x1="0" y1="{{ zero_y }}" x2="720" y2="{{ zero_y }}" stroke="#bbb" stroke-dasharray="4"/>{% endif %}
+    <polyline fill="none" stroke="#d32f2f" stroke-width="2" points="{{ atl_points }}"/>
+    <polyline fill="none" stroke="#2e7d32" stroke-width="2" points="{{ ctl_points }}"/>
+    <polyline fill="none" stroke="#1976d2" stroke-width="2" points="{{ tsb_points }}"/>
   </svg>
 </div>
 

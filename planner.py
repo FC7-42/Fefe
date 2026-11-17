@@ -176,11 +176,23 @@ def _long_run_session(phase, weeks_left, paces):
 def _quality_session(phase, weeks_left, paces):
     """Qualité 1 — mercredi : la séance clé de la semaine."""
     if phase == "spécifique" and paces:
-        if weeks_left is not None and weeks_left <= 5:
-            return (f"Bloc long : 10 km continus à {_p(paces, 'mp')} "
-                    "(allure marathon exacte), après 20 min d'échauffement progressif.")
-        return (f"Allure marathon : 3 x 8 min à {_p(paces, 'mp')} "
-                "(récup 2 min en trottinant), après 20 min d'échauffement.")
+        mp = _p(paces, "mp")
+        tiers = [
+            (8, f"Allure marathon : 3 x 10 min à {mp} (récup 2 min en "
+                "trottinant), après 20 min d'échauffement progressif."),
+            (7, f"Allure marathon : 3 x 12 min à {mp} (récup 2 min), "
+                "après 20 min d'échauffement."),
+            (6, f"Allure marathon : 3 x 5 km à {mp} (récup 3 min), "
+                "après 20 min d'échauffement."),
+            (5, f"Allure marathon : 2 x 7 km à {mp} (récup 3 min), "
+                "après 20 min d'échauffement."),
+            (4, f"Allure marathon : 12 km continus à {mp} — la séance de "
+                "confiance, après 20 min d'échauffement."),
+        ]
+        for threshold, desc in tiers:
+            if weeks_left is not None and weeks_left >= threshold:
+                return desc
+        return tiers[-1][1]
     if phase == "développement" and paces:
         if weeks_left is not None and weeks_left <= 11:
             return (f"Seuil long : 2 x 15 min à {_p(paces, 'seuil')} "
@@ -200,10 +212,11 @@ def _quality_session(phase, weeks_left, paces):
 
 
 def _second_quality_session(phase, weeks_left, paces):
-    """Qualité 2 — vendredi : plus courte, axée vitesse et economy."""
+    """Qualité 2 — vendredi : entretien du seuil et vitesse, sans concurrencer
+    la séance clé du mercredi."""
     if phase == "spécifique" and paces:
-        return (f"Allure cible : 2 x 3 km à {_p(paces, 'mp')} (récup 2 min), "
-                "après 15 min d'échauffement, retour au calme 10 min.")
+        return (f"Entretien seuil : 2 x 10 min à {_p(paces, 'seuil')} "
+                "(récup 2 min 30), après 15 min d'échauffement, retour au calme 10 min.")
     if phase == "développement" and paces:
         return (f"800 m : 6 x 800 m à {_p(paces, '10k')} "
                 "(récup 1 min 30 en trottinant).")

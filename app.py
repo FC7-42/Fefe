@@ -1,5 +1,6 @@
 import os
 import secrets
+from datetime import datetime
 
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, session, url_for
@@ -30,18 +31,47 @@ def get_client():
     return client
 
 
-def _svg_points(series, key, lo, hi, width=720, height=160):
+X0, X1, Y0, Y1 = 50, 770, 10, 150  # zone de tracé du graphique (viewBox 780x180)
+
+
+def _svg_points(series, key, lo, hi):
     """Convertit une série (ATL/CTL/TSB) en points SVG sur une échelle commune."""
     n = len(series)
     if n < 2:
         return ""
-    step = width / (n - 1)
     span = (hi - lo) or 1
     pts = []
     for i, point in enumerate(series):
-        y = height - (point[key] - lo) / span * height
-        pts.append(f"{i * step:.1f},{y:.1f}")
+        x = X0 + i / (n - 1) * (X1 - X0)
+        y = Y1 - (point[key] - lo) / span * (Y1 - Y0)
+        pts.append(f"{x:.1f},{y:.1f}")
     return " ".join(pts)
+
+
+def _y_ticks(lo, hi, n=5):
+    """Graduations verticales : (valeur, position y)."""
+    span = (hi - lo) or 1
+    out = []
+    for i in range(n):
+        v = lo + span * i / (n - 1)
+        y = Y1 - (v - lo) / span * (Y1 - Y0)
+        out.append({"label": f"{v:.0f}", "y": round(y, 1)})
+    return out
+
+
+def _x_ticks(series, every_days=14):
+    """Graduations horizontales : (date, position x), une tous les N jours."""
+    n = len(series)
+    if n < 2:
+        return []
+    step_px = (X1 - X0) / (n - 1)
+    first = datetime.strptime(series[0]["date"], "%Y-%m-%d").date()
+    out = []
+    for i, point in enumerate(series):
+        d = datetime.strptime(point["date"], "%Y-%m-%d").date()
+        if (d - first).days % every_days == 0:
+            out.append({"label": d.strftime("%d/%m"), "x": round(X0 + i * step_px, 1)})
+    return out
 
 
 @app.route("/")
@@ -123,14 +153,16 @@ def dashboard():
     atl_points = _svg_points(series, "atl", lo, hi)
     ctl_points = _svg_points(series, "ctl", lo, hi)
     tsb_points = _svg_points(series, "tsb", lo, hi)
-    zero_y = round(160 - (0 - lo) / (hi - lo) * 160) if lo < 0 < hi else None
+    y_ticks = _y_ticks(lo, hi)
+    x_ticks = _x_ticks(series)
+    zero_y = round(Y1 - (0 - lo) / (hi - lo) * (Y1 - Y0)) if lo < 0 < hi else None
 
     athlete = client.athlete()
     return render_template("dashboard.html",
                            athlete=athlete, weeks=weeks, fatigue=fatigue,
                            banister=banister, atl_points=atl_points,
                            ctl_points=ctl_points, tsb_points=tsb_points,
-                           zero_y=zero_y,
+                           y_ticks=y_ticks, x_ticks=x_ticks, zero_y=zero_y,
                            sport=sport, plan=plan, note=note,
                            event=event, phase=phase, weeks_left=weeks_left,
                            target_hours=target_hours, pace=pace,

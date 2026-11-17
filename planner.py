@@ -22,7 +22,17 @@ def _fmt_duration(minutes):
 
 def build_plan(main_sport, weekly_hours, tsb, phase="préparation générale",
                weeks_left=None, pace_seconds=None, long_cap=None):
-    """Retourne (plan, note). weekly_hours = volume cible de la semaine."""
+    """Retourne (plan, note). weekly_hours = volume cible de la semaine.
+
+    Structure fixe de la semaine (rythme réel de l'athlète) :
+      Lundi    footing facile
+      Mardi    musculation/renforcement
+      Mercredi piste — qualité 1
+      Jeudi    footing facile
+      Vendredi piste — qualité 2
+      Samedi   renforcement (optionnel) ou repos
+      Dimanche sortie longue
+    """
     if weekly_hours <= 0:
         weekly_hours = 4.0
     total_min = weekly_hours * 60
@@ -30,12 +40,12 @@ def build_plan(main_sport, weekly_hours, tsb, phase="préparation générale",
     if tsb < -30:
         factor = 0.7
         note = ("Forme très négative (TSB < -30) : décharge improvisée — "
-                "volume réduit, aucune intensité, même en pleine préparation.")
+                "volume réduit, une seule séance de piste, même en pleine préparation.")
         with_quality = False
     elif tsb < -10:
         factor = 0.85
         note = ("Fatigue accumulée (TSB négatif) : volume allégé de 15 %, "
-                "qualité raccourcie.")
+                "qualités raccourcies.")
         with_quality = True
     else:
         factor = 1.0
@@ -49,62 +59,111 @@ def build_plan(main_sport, weekly_hours, tsb, phase="préparation générale",
 
     if phase == "semaine J":
         plan.append({
-            "day": "Mardi",
-            "type": "Déverrouillage",
+            "day": "Lundi",
+            "type": "Footing",
             "duration": "25 min",
-            "description": "20 min très facile + 4 lignes droites de 15 s.",
+            "description": "Très facile, décontracté.",
+        })
+        plan.append({
+            "day": "Mardi",
+            "type": "Muscles",
+            "duration": "30 min",
+            "description": "Renforcement léger, sans charge lourde.",
+        })
+        plan.append({
+            "day": "Mercredi",
+            "type": "Piste — activation",
+            "duration": "30 min",
+            "description": "20 min facile + 4 lignes droites de 15 s.",
         })
         plan.append({
             "day": "Jeudi",
-            "type": "Activation",
+            "type": "Footing",
             "duration": "20 min",
-            "description": "15 min très facile + 2 min à l'allure de course + 3 min facile.",
+            "description": "15 min très facile + 2 min à l'allure de course.",
         })
-        plan.append({
-            "day": "Jour de course",
-            "type": "🏁 Objectif",
-            "duration": "—",
-            "description": "Parti prudent, hydratation toutes les 20 min, "
-                           "garde l'allure cible jusqu'au 30e km, puis tout ce que tu as.",
-        })
-        return _sorted(plan), "Semaine de course : repos, sommeil, glucides. Le travail est fait."
-
-    long_min = min(total_min * 0.40, float(long_cap or 105))
-    plan.append({
-        "day": "Samedi ou dimanche",
-        "type": "Sortie longue",
-        "duration": _fmt_duration(long_min),
-        "description": _long_run_session(phase, pace),
-    })
-
-    if with_quality:
-        plan.append({
-            "day": "Jeudi",
-            "type": "Qualité",
-            "duration": _fmt_duration(total_min * 0.25),
-            "description": _quality_session(sport, phase, pace),
-        })
-
-    plan.append({
-        "day": "Mardi",
-        "type": "Endurance fondamentale",
-        "duration": _fmt_duration(total_min * 0.30),
-        "description": f"{sport} facile, cardio bas, tu dois pouvoir parler en courant.",
-    })
-
-    if total_min >= 300:
         plan.append({
             "day": "Vendredi",
-            "type": "Récupération",
-            "duration": _fmt_duration(total_min * 0.10),
-            "description": "Sortie très facile ou mobilité/renforcement léger.",
+            "type": "Repos",
+            "duration": "—",
+            "description": "Repos complet, sommeil, glucides.",
         })
+        plan.append({
+            "day": "Samedi",
+            "type": "Déverrouillage",
+            "duration": "15 min",
+            "description": "10 min très facile + 3 lignes droites.",
+        })
+        plan.append({
+            "day": "Dimanche",
+            "type": "🏁 Marathon",
+            "duration": "—",
+            "description": "Parti prudent, hydratation toutes les 20 min, "
+                           "allure cible jusqu'au 30e km, puis tout ce que tu as.",
+        })
+        return _sorted(plan), "Semaine de course : tout est déjà dans les jambes."
+
+    long_min = min(total_min * 0.38, float(long_cap or 105))
+    q1_min = total_min * 0.22
+    q2_min = total_min * 0.18 if with_quality else 0
+    jog_min = max((total_min - long_min - q1_min - q2_min) / 2, 20)
+
+    near_race = weeks_left is not None and weeks_left <= 3
+    muscles_min = "30 min" if near_race else "45 min"
+    muscles_desc = ("Renforcement léger : gainage, mollets, mobilité."
+                    if near_race else
+                    "Renforcement : gainage, squats, fentes, mollets. "
+                    "Pas de course ce jour-là.")
 
     plan.append({
         "day": "Lundi",
-        "type": "Repos",
-        "duration": "—",
-        "description": "Repos complet ou 20 min de mobilité.",
+        "type": "Footing",
+        "duration": _fmt_duration(jog_min),
+        "description": f"{sport} très facile, cardio bas, tu dois pouvoir parler.",
+    })
+    plan.append({
+        "day": "Mardi",
+        "type": "Muscles",
+        "duration": muscles_min,
+        "description": muscles_desc,
+    })
+    plan.append({
+        "day": "Mercredi",
+        "type": "Piste — qualité 1",
+        "duration": _fmt_duration(q1_min),
+        "description": _quality_session(sport, phase, pace),
+    })
+    plan.append({
+        "day": "Jeudi",
+        "type": "Footing",
+        "duration": _fmt_duration(jog_min),
+        "description": f"{sport} facile, récupération active de la séance de piste.",
+    })
+    if with_quality:
+        plan.append({
+            "day": "Vendredi",
+            "type": "Piste — qualité 2",
+            "duration": _fmt_duration(q2_min),
+            "description": _second_quality_session(sport, phase, pace),
+        })
+    else:
+        plan.append({
+            "day": "Vendredi",
+            "type": "Footing",
+            "duration": _fmt_duration(jog_min),
+            "description": "Footing facile à la place de la piste (semaine allégée).",
+        })
+    plan.append({
+        "day": "Samedi",
+        "type": "Renforcement (optionnel)",
+        "duration": "30 min",
+        "description": "Mobilité, gainage, étirements — ou repos complet si fatigue.",
+    })
+    plan.append({
+        "day": "Dimanche",
+        "type": "Sortie longue",
+        "duration": _fmt_duration(long_min),
+        "description": _long_run_session(phase, pace),
     })
 
     if note:
@@ -116,7 +175,7 @@ def build_plan(main_sport, weekly_hours, tsb, phase="préparation générale",
 
 def _sorted(plan):
     order = {"Lundi": 0, "Mardi": 1, "Mercredi": 2, "Jeudi": 3, "Vendredi": 4,
-             "Samedi ou dimanche": 5, "Jour de course": 6}
+             "Samedi": 5, "Dimanche": 6, "Samedi ou dimanche": 5, "Jour de course": 6}
     plan.sort(key=lambda s: order[s["day"]])
     return plan
 
@@ -137,18 +196,15 @@ def _long_run_session(phase, pace):
         return ("Sortie longue spécifique : partie centrale de 40-60 min à "
                 f"l'allure cible ({pace}), le reste en endurance facile.")
     if phase in ("spécifique", "développement"):
-        return "Sortie longue en endurance, finissez les 20 dernières minutes à allure semi."
+        return "Sortie longue en endurance, finis les 20 dernières minutes à allure semi."
     return "Sortie longue en endurance fondamentale, allure conversationnelle."
 
 
 def _quality_session(sport, phase, pace):
-    key = sport.lower()
-    if not key.startswith(("run", "trail", "treadmill")):
-        return ("Séance de qualité adaptée à ton sport : échauffement 15 min, "
-                "travail par intervalles, retour au calme 10 min.")
+    """Qualité 1 — mercredi : la séance clé de la semaine."""
     if phase == "spécifique":
         if pace:
-            return (f"Allure cible : 3 x 8 min{f' à {pace}' if pace else ''} "
+            return (f"Allure cible : 3 x 8 min à {pace} "
                     "(récup 2 min en trottinant), après 15 min d'échauffement.")
         return "Allure cible : 3 x 8 min à l'allure de course, récup 2 min."
     if phase == "développement":
@@ -156,6 +212,20 @@ def _quality_session(sport, phase, pace):
     if phase == "affûtage":
         return "Entretien : 4 x 2 min à allure cible (récup 90 s), séance courte et vive."
     return "Côtes : 8 x 45 s en montée, redescente en récupération, après 15 min d'échauffement."
+
+
+def _second_quality_session(sport, phase, pace):
+    """Qualité 2 — vendredi : plus courte, complémentaire de celle du mercredi."""
+    if phase == "spécifique":
+        if pace:
+            return (f"Allure cible : 2 x 3 km à {pace} "
+                    "(récup 2 min), après 15 min d'échauffement, retour au calme 10 min.")
+        return "Allure cible : 2 x 3 km, récup 2 min, après échauffement."
+    if phase == "développement":
+        return "Fractionné court : 8 x 400 m à allure 10 km (récup 1 min en trottinant)."
+    if phase == "affûtage":
+        return "Foulées : 6 lignes droites de 20 s, le reste très facile."
+    return "Foulées et gammes : 6 x 20 s rapides, gammes de course, le reste en facile."
 
 
 def next_week_dates():
